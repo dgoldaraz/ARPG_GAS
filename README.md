@@ -16,6 +16,6 @@ Daniel Goldaraz
 ## Current features
 
 ## Future features and Ideas
-
+* Add Ability points on selection
 
 Link [here](https://github.com/dgoldaraz/ARPG_GAS
