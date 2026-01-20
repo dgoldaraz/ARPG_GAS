@@ -45,6 +45,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Attributes")
 	FDataTableRowHandle HeroAttributeData;
 	
-	// Initialize attributes (Can eb called on Initialization)
+	// Initialize attributes (Can be called on Initialization)
 	void InitializeAttributes();
+	
+	// Initialize Abilities 
+	void InitializeAbilities();
+	
+	UPROPERTY(EditAnywhere, Category = "Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> HeroInitialAbilities;
 };

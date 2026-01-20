@@ -34,6 +34,8 @@ void AHeroCharacter::BeginPlay()
 	
 	// Initialize attreibutes on game starts
 	InitializeAttributes();
+	
+	InitializeAbilities();
 }
 
 // Called every frame
@@ -83,13 +85,27 @@ void AHeroCharacter::InitializeAttributes()
 					// Apply Effect
 					GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*Spec);
 				}
-				
-				float CurrentHealth = GetAbilitySystemComponent()->GetNumericAttribute(UHeroAttributeSet::GetHealthAttribute());
-
 			}
 			else
 			{
 				UE_LOG(LogTemp, Warning, TEXT("No Configured Data Attribute for Hero"));
+			}
+		}
+	}
+}
+
+void AHeroCharacter::InitializeAbilities()
+{
+	// Here we choose to have a list of abiltiies. 
+	// This can also be done creating a new GE that add the abilities and apply it on initialization (like attributes)
+	for (const TSubclassOf<UGameplayAbility>& abilityClass : HeroInitialAbilities)
+	{
+		if (UClass* pAbilityClass = abilityClass.Get())
+		{
+			FGameplayAbilitySpec abilitySpec(pAbilityClass);
+			if (abilitySpec.Ability != nullptr)	// avoiding engine crash
+			{
+				GetAbilitySystemComponent()->GiveAbility(abilitySpec);
 			}
 		}
 	}
