@@ -11,7 +11,6 @@ AHeroCharacter::AHeroCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 	// Initialize ASC
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>("AbilitySystemComponent");
 	AbilitySystemComponent->SetIsReplicated(true); //Enable replication
@@ -27,63 +26,101 @@ UAbilitySystemComponent* AHeroCharacter::GetAbilitySystemComponent() const
 	return AbilitySystemComponent;
 }
 
-// Called when the game starts or when spawned
-void AHeroCharacter::BeginPlay()
+void AHeroCharacter::PossessedBy(AController* NewController)
 {
-	Super::BeginPlay();
+	Super::PossessedBy(NewController);
 	
-	// Initialize attreibutes on game starts
+	// Guard if this function is called from outside. In normal flow is not needed
+	if (HasAuthority())
+	{
+		InitializeAbilityActorInfo();
+		// Generally we don't need to call SetOwner (as it's called on APawn). But we need to be sure (due to Mixed replication)
+		// that the ASC Owner is set having the controller as owner
+		
+		// only on server
+		InitializeGAS();
+	}
+}
+
+void AHeroCharacter::OnRep_Controller()
+{
+	Super::OnRep_Controller();
+	InitializeAbilityActorInfo();
+}
+
+void AHeroCharacter::InitializeAbilityActorInfo()
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		// Initialize who owns the ASC and which actor is being used.
+		// Needed so the ASC can access to Avatar, Controller, NetContext etc...
+		ASC->InitAbilityActorInfo(this, this);
+	}
+}
+
+void AHeroCharacter::InitializeGAS()
+{
 	InitializeAttributes();
-	
 	InitializeAbilities();
 }
 
-// Called every frame
-void AHeroCharacter::Tick(float DeltaTime)
+void AHeroCharacter::InitializeUsingGE(FHeroAttributeData* Data) const
 {
-	Super::Tick(DeltaTime);
+	// We use a GE to initialize the attributes. to make it work, the GE needs to be properly configured (using proper tag, set to use SetByCaller)
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (Data != nullptr && ASC != nullptr)
+	{
+		FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(InitialAttributesEffect, 1.f, GetAbilitySystemComponent()->MakeEffectContext());
+		
+		if (SpecHandle.IsValid())
+		{
+			FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
+			
+			//Set Change attributes. This calls will create a modifier associated with the Attribute Set, defining the magnitude to change
+			Spec->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("HeroAttributeSet.Health"), Data->Health);
+			Spec->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("HeroAttributeSet.MaxHealth"), Data->MaxHealth);
+			
+			// Apply Effect
+			ASC->ApplyGameplayEffectSpecToSelf(*Spec);
+		}
+	}
+}
+
+void AHeroCharacter::InitializeByCall(FHeroAttributeData* Data) const
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (Data != nullptr && ASC != nullptr)
+	{
+		HeroAttributeSet->InitHealth(Data->Health);
+		HeroAttributeSet->InitMaxHealth(Data->MaxHealth);
+	}
 }
 
 // Called to bind functionality to input
 void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
-void AHeroCharacter::InitializeAttributes()
+void AHeroCharacter::InitializeAttributes() const
 {
-	if (GetAbilitySystemComponent() != nullptr && HeroAttributeSet != nullptr)
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (ASC != nullptr && HeroAttributeSet != nullptr && HasAuthority())
 	{
 		//Load Data table with Attribute info
 		if (!HeroAttributeData.IsNull())
 		{
-			FHeroAttributeData* Data = HeroAttributeData.GetRow<FHeroAttributeData>("");
+			// TEXT is related to debug system
+			FHeroAttributeData* Data = HeroAttributeData.GetRow<FHeroAttributeData>(TEXT("AHeroCharacter::InitializeAttributes"));
 			if (Data != nullptr)
 			{
-				//  Create Init GE. This GE needs to be created on Editor.
-				// On it, we need to add different Modifiers per attribute, setting the Magnitude Calculation Type to SetByCaller
-				// And matching the attribute to call with a GameplayTag
-				TSubclassOf<UGameplayEffect> InitGE = LoadClass<UGameplayEffect>(nullptr, TEXT("/Game/Abilities/GE_InitAttributes.GE_InitAttributes_C"));
-				if (InitGE == nullptr)
+				if (InitialAttributesEffect != nullptr)
 				{
-					UE_LOG(LogTemp, Error, TEXT("No Init GE GE_InitAttributes"));
-					return;
+					InitializeUsingGE(Data);
 				}
-				
-				FGameplayEffectSpecHandle SpecHandle =GetAbilitySystemComponent()->MakeOutgoingSpec(InitGE, 1.f, GetAbilitySystemComponent()->MakeEffectContext());
-			
-				if (SpecHandle.IsValid())
+				else
 				{
-					FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
-					
-					//Set Change attributes. This calls will create a modifier associated with the Attribute Set, defining the magnitude to change
-					FGameplayTag tag = FGameplayTag::RequestGameplayTag("HeroAttributeSet.Health");
-					Spec->SetSetByCallerMagnitude(tag, 150.0f);
-					Spec->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("HeroAttributeSet.MaxHealth"), Data->MaxHealth);
-					
-					// Apply Effect
-					GetAbilitySystemComponent()->ApplyGameplayEffectSpecToSelf(*Spec);
+					InitializeByCall(Data);
 				}
 			}
 			else
@@ -96,18 +133,22 @@ void AHeroCharacter::InitializeAttributes()
 
 void AHeroCharacter::InitializeAbilities()
 {
-	// Here we choose to have a list of abiltiies. 
-	// This can also be done creating a new GE that add the abilities and apply it on initialization (like attributes)
-	for (const TSubclassOf<UGameplayAbility>& abilityClass : HeroInitialAbilities)
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (ASC != nullptr && HasAuthority())
 	{
-		if (UClass* pAbilityClass = abilityClass.Get())
+		for (const TSubclassOf<UGameplayAbility>& abilityClass : HeroInitialAbilities)
 		{
-			FGameplayAbilitySpec abilitySpec(pAbilityClass);
-			if (abilitySpec.Ability != nullptr)	// avoiding engine crash
+			if (UClass* pAbilityClass = abilityClass.Get())
 			{
-				GetAbilitySystemComponent()->GiveAbility(abilitySpec);
+				FGameplayAbilitySpec abilitySpec(pAbilityClass, 1);
+				if (abilitySpec.Ability != nullptr)	// avoiding engine crash
+				{
+					ASC->GiveAbility(abilitySpec);
+				}
 			}
 		}
 	}
+	// Here we choose to have a list of abilities. 
+	// This can also be done creating a new GE that add the abilities and apply it on initialization (like attributes)
 }
 

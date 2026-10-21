@@ -20,20 +20,27 @@ public:
 	// Implement the interface method to return an AbilitySystemComponent
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	
+	// Called when this player is possessed in server
+	virtual void PossessedBy(AController* NewController) override;
+	// Called when client has info of the controller
+	virtual void OnRep_Controller() override;
+	
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	void InitializeAbilityActorInfo();
+	void InitializeGAS();
 
+private:
+	// If a GE is set, try to use it to initialize attributes
+	void InitializeUsingGE(FHeroAttributeData* Data) const;
+	
+	// Uses direct access to attributes for configuration
+	void InitializeByCall(FHeroAttributeData* Data) const;
+	
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	
 protected:
-	
 	// ASC
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
 	UAbilitySystemComponent* AbilitySystemComponent;
@@ -42,11 +49,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
 	UHeroAttributeSet* HeroAttributeSet;
 	
+	// Data storing different archetypes to initialize attributes
 	UPROPERTY(EditAnywhere, Category = "Attributes")
 	FDataTableRowHandle HeroAttributeData;
 	
+	// Initial GE to initialize attributes
+	UPROPERTY(EditAnywhere, Category = "GAS|Initialization")
+	TSubclassOf<UGameplayEffect> InitialAttributesEffect;
+	
 	// Initialize attributes (Can be called on Initialization)
-	void InitializeAttributes();
+	void InitializeAttributes() const;
 	
 	// Initialize Abilities 
 	void InitializeAbilities();

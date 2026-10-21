@@ -33,10 +33,10 @@ public:
 public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-	float Health;
+	float Health = 100.0f;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
-	float MaxHealth;
+	float MaxHealth = 100.0f;
 };
 
 UCLASS()
@@ -63,9 +63,13 @@ public:
 protected:
 	
 	// Updates whenever a character Health changes. Will ensure that current health it's updated and synched
+	// Clients updates when attribute changes
 	UFUNCTION()
 	virtual void OnRep_CurrentHealth(const FGameplayAttributeData &OldCurrentHealth);
 	
 	UFUNCTION()
 	virtual void OnRep_MaxHealth(const FGameplayAttributeData &OldMaxHealth);
+	
+	// Marks the properties we want to replicate
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
