@@ -6,12 +6,13 @@
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotionConstantForce.h"
 #include "GameFramework/RootMotionSource.h"
+#include "ARPGTags.h"
 
 UDashAbility::UDashAbility()
 {
 	//Set Ability info
 	// TODO: Create global file to store all tags, so access is not based on String
-	FGameplayTag dashTag = FGameplayTag::RequestGameplayTag("HeroAbilities.Dash");
+	FGameplayTag dashTag = GTags::DashAbility;
 	AbilityTags.AddTag(dashTag);
 	ActivationBlockedTags.AddTag(dashTag);
 	

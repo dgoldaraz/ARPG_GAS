@@ -8,6 +8,22 @@
 #include "HeroAttributeSet.h"
 #include "HeroCharacter.generated.h"
 
+class UAbilityInputComponent;
+
+
+// Struct to save initial ability using input tag
+USTRUCT(BlueprintType)
+struct FInitialAbility
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UGameplayAbility> AbilityClass;
+	
+	UPROPERTY(EditAnywhere)
+	FGameplayTag InputTag;
+};
+
 UCLASS()
 class ARPG_GAS_API AHeroCharacter : public AARPG_GASCharacter, public IAbilitySystemInterface
 {
@@ -26,9 +42,19 @@ public:
 	virtual void OnRep_Controller() override;
 	
 protected:
+	
+	// Initialize actor info
 	void InitializeAbilityActorInfo();
+	
+	// Initialize GAS info
 	void InitializeGAS();
-
+	
+	// Initialize attributes (Can be called on Initialization)
+	void InitializeAttributes() const;
+	
+	// Initialize Abilities 
+	void InitializeAbilities();
+	
 private:
 	// If a GE is set, try to use it to initialize attributes
 	void InitializeUsingGE(FHeroAttributeData* Data) const;
@@ -45,6 +71,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
 	UAbilitySystemComponent* AbilitySystemComponent;
 	
+	// Input component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities", meta = (AllowPrivateAccess = "true"))
+	UAbilityInputComponent* AbilityInputComponent;
+	
 	// Hero Attributes
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Attributes", meta = (AllowPrivateAccess = "true"))
 	UHeroAttributeSet* HeroAttributeSet;
@@ -57,12 +87,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "GAS|Initialization")
 	TSubclassOf<UGameplayEffect> InitialAttributesEffect;
 	
-	// Initialize attributes (Can be called on Initialization)
-	void InitializeAttributes() const;
-	
-	// Initialize Abilities 
-	void InitializeAbilities();
-	
+	// Initial Abilities set
 	UPROPERTY(EditAnywhere, Category = "Abilities")
-	TArray<TSubclassOf<UGameplayAbility>> HeroInitialAbilities;
+	TArray<FInitialAbility> HeroInitialAbilities;
 };

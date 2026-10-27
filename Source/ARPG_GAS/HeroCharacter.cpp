@@ -3,7 +3,8 @@
 
 #include "HeroCharacter.h"
 #include "GameplayEffect.h"
-#include "GameplayEffectExtension.h"
+#include "ARPGTags.h"
+#include "Components/AbilityInputComponent.h"
 
 // Sets default values
 AHeroCharacter::AHeroCharacter()
@@ -16,6 +17,8 @@ AHeroCharacter::AHeroCharacter()
 	AbilitySystemComponent->SetIsReplicated(true); //Enable replication
 	// Send only minal info on GE
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	
+	AbilityInputComponent = CreateDefaultSubobject<UAbilityInputComponent>("AbilityInputComponent");
 	
 	//Initialize Attribute Set
 	HeroAttributeSet = CreateDefaultSubobject<UHeroAttributeSet>("HeroAttributeSet");
@@ -77,8 +80,8 @@ void AHeroCharacter::InitializeUsingGE(FHeroAttributeData* Data) const
 			FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
 			
 			//Set Change attributes. This calls will create a modifier associated with the Attribute Set, defining the magnitude to change
-			Spec->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("HeroAttributeSet.Health"), Data->Health);
-			Spec->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("HeroAttributeSet.MaxHealth"), Data->MaxHealth);
+			Spec->SetSetByCallerMagnitude(GTags::AttributeHealth, Data->Health);
+			Spec->SetSetByCallerMagnitude(GTags::AttributeMaxHealth, Data->MaxHealth);
 			
 			// Apply Effect
 			ASC->ApplyGameplayEffectSpecToSelf(*Spec);
@@ -100,6 +103,7 @@ void AHeroCharacter::InitializeByCall(FHeroAttributeData* Data) const
 void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	AbilityInputComponent->SetupPlayerInputComponent(PlayerInputComponent);
 }
 
 void AHeroCharacter::InitializeAttributes() const
@@ -136,14 +140,19 @@ void AHeroCharacter::InitializeAbilities()
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 	if (ASC != nullptr && HasAuthority())
 	{
-		for (const TSubclassOf<UGameplayAbility>& abilityClass : HeroInitialAbilities)
+		for (const FInitialAbility& ability: HeroInitialAbilities)
 		{
-			if (UClass* pAbilityClass = abilityClass.Get())
+			if (ability.InputTag.IsValid())
 			{
-				FGameplayAbilitySpec abilitySpec(pAbilityClass, 1);
-				if (abilitySpec.Ability != nullptr)	// avoiding engine crash
+				if (UClass* pAbilityClass = ability.AbilityClass.Get())
 				{
-					ASC->GiveAbility(abilitySpec);
+					FGameplayAbilitySpec abilitySpec(pAbilityClass, 1);
+					if (abilitySpec.Ability != nullptr)	// avoiding engine crash
+					{
+						ASC->GiveAbility(abilitySpec);
+						// Add ability to component
+						AbilityInputComponent->RegisterAbility(ability.AbilityClass, ability.InputTag);
+					}
 				}
 			}
 		}
