@@ -42,8 +42,6 @@ void UAbilityInputComponent::RegisterAbility(const TSubclassOf<UGameplayAbility>
 		return;
 	}
 	
-	
-	
 	//Save ability on the map
 	FAbilityInfo newInfo;
 	newInfo.AbilityClass = ability;
@@ -65,6 +63,12 @@ void UAbilityInputComponent::RegisterAbility(const TSubclassOf<UGameplayAbility>
 	{
 		abilitySlot.Add(inputTag, newInfo);
 	}
+	
+	FGameplayTagContainer abilityTags = ability.GetDefaultObject()->GetAssetTags();
+	// ensure we only have one tag
+	ensure(abilityTags.Num() == 1);
+	
+	OnInputChangedDelegate.Broadcast(inputTag, abilityTags.GetByIndex(0));
 }
 
 void UAbilityInputComponent::OnActionPressed(FGameplayTag actionTag)

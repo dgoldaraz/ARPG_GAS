@@ -37,6 +37,16 @@ void UHeroAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHeal
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UHeroAttributeSet, MaxHealth, OldMaxHealth);
 }
 
+void UHeroAttributeSet::OnRep_CurrentStamina(const FGameplayAttributeData& OldCurrentStamina)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UHeroAttributeSet, Stamina, OldCurrentStamina);
+}
+
+void UHeroAttributeSet::OnRep_MaxStamina(const FGameplayAttributeData& OldMaxStamina)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UHeroAttributeSet, MaxStamina, OldMaxStamina);
+}
+
 void UHeroAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	/*
@@ -52,4 +62,6 @@ void UHeroAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	// Define what needs to be replicated with clients
 	DOREPLIFETIME_CONDITION_NOTIFY(UHeroAttributeSet, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UHeroAttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UHeroAttributeSet, Stamina, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UHeroAttributeSet, MaxStamina, COND_None, REPNOTIFY_Always);
 }

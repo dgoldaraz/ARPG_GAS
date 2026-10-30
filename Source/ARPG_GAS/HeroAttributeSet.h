@@ -37,6 +37,12 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
 	float MaxHealth = 100.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+	float Stamina = 100.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attributes")
+	float MaxStamina = 100.0f;
 };
 
 UCLASS()
@@ -59,6 +65,16 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing=OnRep_MaxHealth)
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS(UHeroAttributeSet, MaxHealth)
+	
+	// Current Stamina
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing=OnRep_CurrentStamina)
+	FGameplayAttributeData Stamina;
+	ATTRIBUTE_ACCESSORS(UHeroAttributeSet, Stamina)
+	
+	// Max Stamina
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing=OnRep_MaxStamina)
+	FGameplayAttributeData MaxStamina;
+	ATTRIBUTE_ACCESSORS(UHeroAttributeSet, MaxStamina)
 
 protected:
 	
@@ -69,6 +85,12 @@ protected:
 	
 	UFUNCTION()
 	virtual void OnRep_MaxHealth(const FGameplayAttributeData &OldMaxHealth);
+	
+	UFUNCTION()
+	virtual void OnRep_CurrentStamina(const FGameplayAttributeData &OldCurrentStamina);
+	
+	UFUNCTION()
+	virtual void OnRep_MaxStamina(const FGameplayAttributeData &OldMaxStamina);
 	
 	// Marks the properties we want to replicate
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

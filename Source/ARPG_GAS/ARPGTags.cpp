@@ -12,4 +12,6 @@ namespace GTags
 	UE_DEFINE_GAMEPLAY_TAG(DashAbility, "HeroAbilities.Dash");
 	UE_DEFINE_GAMEPLAY_TAG(AttributeHealth, "HeroAttributeSet.Health");
 	UE_DEFINE_GAMEPLAY_TAG(AttributeMaxHealth, "HeroAttributeSet.MaxHealth");
+	UE_DEFINE_GAMEPLAY_TAG(AttributeStamina, "HeroAttributeSet.Stamina");
+	UE_DEFINE_GAMEPLAY_TAG(AttributeMaxStamina, "HeroAttributeSet.MaxStamina");
 }

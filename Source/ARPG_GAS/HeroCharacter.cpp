@@ -82,6 +82,8 @@ void AHeroCharacter::InitializeUsingGE(FHeroAttributeData* Data) const
 			//Set Change attributes. This calls will create a modifier associated with the Attribute Set, defining the magnitude to change
 			Spec->SetSetByCallerMagnitude(GTags::AttributeHealth, Data->Health);
 			Spec->SetSetByCallerMagnitude(GTags::AttributeMaxHealth, Data->MaxHealth);
+			Spec->SetSetByCallerMagnitude(GTags::AttributeStamina, Data->Stamina);
+			Spec->SetSetByCallerMagnitude(GTags::AttributeMaxStamina, Data->MaxStamina);
 			
 			// Apply Effect
 			ASC->ApplyGameplayEffectSpecToSelf(*Spec);
@@ -96,6 +98,8 @@ void AHeroCharacter::InitializeByCall(FHeroAttributeData* Data) const
 	{
 		HeroAttributeSet->InitHealth(Data->Health);
 		HeroAttributeSet->InitMaxHealth(Data->MaxHealth);
+		HeroAttributeSet->InitStamina(Data->Stamina);
+		HeroAttributeSet->InitMaxStamina(Data->MaxStamina);
 	}
 }
 

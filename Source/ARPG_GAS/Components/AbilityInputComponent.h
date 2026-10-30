@@ -13,6 +13,9 @@ class UInputAction;
 class UGameplayAbility;
 class UAbilitySystemComponent;
 
+// Declare delegate when input change action
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnInputChanged, FGameplayTag inputTag, FGameplayTag actionTag );
+
 USTRUCT(BlueprintType)
 struct FAbilityInputBinding
 {
@@ -61,7 +64,11 @@ protected:
 	// Function for Action1 press
 	UFUNCTION(BlueprintCallable)
 	void OnActionPressed(FGameplayTag actionTag);
-
+	
+public:
+	// Delegate called when input changes
+	FOnInputChanged OnInputChangedDelegate;
+	
 private:
 	// Implement the interface method to return an AbilitySystemComponent
 	UAbilitySystemComponent* GetAbilitySystemComponent() const;
