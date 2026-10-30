@@ -38,6 +38,9 @@ struct FAbilityInfo
 	
 	//Handle 
 	FGameplayAbilitySpecHandle AbilityHandle;
+	
+	// Ability Tag
+	FGameplayTag AbilityTag;
 };
 
 /*
@@ -59,6 +62,9 @@ public:
 	
 	// Register an ability on a specific tag
 	void RegisterAbility(const TSubclassOf<UGameplayAbility> ability, FGameplayTag inputTag);
+	
+	// Return ability tag associated for input if any
+	FGameplayTag GetTagByInput(FGameplayTag inputTag) const;
 
 protected:
 	// Function for Action1 press

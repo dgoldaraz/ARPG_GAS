@@ -6,7 +6,10 @@
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
 #include "HeroAttributeSet.h"
+#include "UISettings.h"
 #include "Components/AbilityInputComponent.h"
+#include "Components/Image.h"
+#include "Components/ProgressBar.h"
 
 void UHeroHUDWidget::InitializeWithPawn(APawn* InPawn)
 {
@@ -14,8 +17,6 @@ void UHeroHUDWidget::InitializeWithPawn(APawn* InPawn)
 	{
 		return;
 	}
-	
-	
 	
 	IAbilitySystemInterface* ASI =Cast<IAbilitySystemInterface>(InPawn);
 	if (!ASI)
@@ -31,7 +32,8 @@ void UHeroHUDWidget::InitializeWithPawn(APawn* InPawn)
 		// Listen to changes on attributes
 		ASC->GetGameplayAttributeValueChangeDelegate(UHeroAttributeSet::GetHealthAttribute()).AddUObject(this, &ThisClass::OnHealthChanged);
 		ASC->GetGameplayAttributeValueChangeDelegate(UHeroAttributeSet::GetStaminaAttribute()).AddUObject(this, &ThisClass::OnStaminaChanged);
-		UpdateASCValues(ASC);
+		UpdateHealthBar();
+		UpdateStaminaBar();
 	}
 	
 	if (UAbilityInputComponent* AIC = InPawn->FindComponentByClass<UAbilityInputComponent>())
@@ -39,8 +41,19 @@ void UHeroHUDWidget::InitializeWithPawn(APawn* InPawn)
 		CacheAIC = AIC;
 		// Listen to changes on input
 		AIC->OnInputChangedDelegate.AddUObject(this, &ThisClass::OnInputChanged);
-		UpdateInputs(AIC);
+		UpdateInputs();
 	}
+}
+
+void UHeroHUDWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	/// Fill map 
+	ensure(TopActionTag.IsValid() && LeftActionTag.IsValid() && RightActionTag.IsValid()&&BottomActionTag.IsValid());
+	ImageMap.Add(TopActionTag, Image_Top);
+	ImageMap.Add(LeftActionTag, Image_Left);
+	ImageMap.Add(RightActionTag, Image_Right);
+	ImageMap.Add(BottomActionTag, Image_Bottom);
 }
 
 void UHeroHUDWidget::NativeDestruct()
@@ -52,18 +65,20 @@ void UHeroHUDWidget::NativeDestruct()
 void UHeroHUDWidget::OnHealthChanged(const FOnAttributeChangeData& ChangeData)
 {
 	// Update HealthBar
+	UpdateHealthBar();
 }
 
 void UHeroHUDWidget::OnStaminaChanged(const FOnAttributeChangeData& ChangeData)
 {
 	// Update Stamina bar
+	UpdateStaminaBar();
 }
 
 void UHeroHUDWidget::OnInputChanged(FGameplayTag inputTag, FGameplayTag actionTag)
 {
 	// Update input
+	UpdateInputImage(inputTag, actionTag);
 }
-
 
 void UHeroHUDWidget::CleanListeners()
 {
@@ -86,12 +101,42 @@ void UHeroHUDWidget::CleanListeners()
 	}
 }
 
-void UHeroHUDWidget::UpdateASCValues(UAbilitySystemComponent* AbilitySystemComponent)
+void UHeroHUDWidget::UpdateHealthBar()
 {
 	// Set bars based on ASC
+	if (CacheASC.IsValid())
+	{
+		const float healthPercent = CacheASC.Get()->GetNumericAttribute(UHeroAttributeSet::GetHealthAttribute()) / CacheASC.Get()->GetNumericAttribute(UHeroAttributeSet::GetMaxHealthAttribute());
+		Bar_Health->SetPercent(healthPercent);
+	}
 }
 
-void UHeroHUDWidget::UpdateInputs(UAbilityInputComponent* inputComponent)
+void UHeroHUDWidget::UpdateStaminaBar()
+{
+	if (CacheASC.IsValid())
+	{
+		const float staminaPercent = CacheASC.Get()->GetNumericAttribute(UHeroAttributeSet::GetStaminaAttribute()) / CacheASC.Get()->GetNumericAttribute(UHeroAttributeSet::GetMaxStaminaAttribute());
+		Bar_Stamina->SetPercent(staminaPercent);
+	}
+}
+
+void UHeroHUDWidget::UpdateInputs()
 {
 	// Set input images based on AIC
+	if (UAbilityInputComponent* AIC = CacheAIC.Get())
+	{
+		UpdateInputImage(TopActionTag, AIC->GetTagByInput(TopActionTag));
+		UpdateInputImage(LeftActionTag, AIC->GetTagByInput(LeftActionTag));
+		UpdateInputImage(RightActionTag, AIC->GetTagByInput(RightActionTag));
+		UpdateInputImage(BottomActionTag, AIC->GetTagByInput(BottomActionTag));
+	}
+}
+
+void UHeroHUDWidget::UpdateInputImage(FGameplayTag inputTag, FGameplayTag abilityTag)
+{
+	const UUISettings* UISettings = UUISettings::Get();
+	if (const TSoftObjectPtr<UTexture2D>* iconPtr = UISettings->AbilityIcons.Find(abilityTag))
+	{
+		ImageMap[inputTag]->SetBrushFromSoftTexture(*iconPtr);
+	}
 }

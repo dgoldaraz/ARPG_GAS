@@ -21,7 +21,8 @@ public class ARPG_GAS : ModuleRules
 			"GameplayTags",
 			"GameplayTasks",
 			"UMG",
-			"Slate"
+			"Slate",
+			"DeveloperSettings"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

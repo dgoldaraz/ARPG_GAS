@@ -43,6 +43,7 @@ void UAbilityInputComponent::RegisterAbility(const TSubclassOf<UGameplayAbility>
 	}
 	
 	//Save ability on the map
+	
 	FAbilityInfo newInfo;
 	newInfo.AbilityClass = ability;
 	
@@ -50,6 +51,10 @@ void UAbilityInputComponent::RegisterAbility(const TSubclassOf<UGameplayAbility>
 	{
 		newInfo.AbilityHandle = Spec->Handle;
 	}
+	FGameplayTagContainer abilityTags = ability.GetDefaultObject()->GetAssetTags();
+	// ensure we only have one tag
+	ensure(abilityTags.Num() == 1);
+	newInfo.AbilityTag = abilityTags.GetByIndex(0);
 	
 	if (auto oldAbility = abilitySlot.Find(inputTag))
 	{
@@ -64,11 +69,17 @@ void UAbilityInputComponent::RegisterAbility(const TSubclassOf<UGameplayAbility>
 		abilitySlot.Add(inputTag, newInfo);
 	}
 	
-	FGameplayTagContainer abilityTags = ability.GetDefaultObject()->GetAssetTags();
-	// ensure we only have one tag
-	ensure(abilityTags.Num() == 1);
-	
-	OnInputChangedDelegate.Broadcast(inputTag, abilityTags.GetByIndex(0));
+	OnInputChangedDelegate.Broadcast(inputTag, newInfo.AbilityTag);
+}
+
+FGameplayTag UAbilityInputComponent::GetTagByInput(FGameplayTag inputTag) const
+{
+	FGameplayTag result;
+	if (inputTag.IsValid() && abilitySlot.Contains(inputTag))
+	{
+		result = abilitySlot[inputTag].AbilityTag;
+	}
+	return result;
 }
 
 void UAbilityInputComponent::OnActionPressed(FGameplayTag actionTag)
