@@ -48,15 +48,6 @@ private:
 	void UpdateInputImage(FGameplayTag inputTag, FGameplayTag abilityTag);
 	
 protected:
-	UPROPERTY(EditAnywhere)
-	FGameplayTag TopActionTag;
-	UPROPERTY(EditAnywhere)
-	FGameplayTag LeftActionTag;
-	UPROPERTY(EditAnywhere)
-	FGameplayTag RightActionTag;
-	UPROPERTY(EditAnywhere)
-	FGameplayTag BottomActionTag;
-	
 	// Bars
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UProgressBar> Bar_Health;

@@ -5,11 +5,13 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
+#include "ARPGTags.h"
 #include "HeroAttributeSet.h"
 #include "UISettings.h"
 #include "Components/AbilityInputComponent.h"
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
+#include "ARPGTags.h"
 
 void UHeroHUDWidget::InitializeWithPawn(APawn* InPawn)
 {
@@ -49,11 +51,10 @@ void UHeroHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	/// Fill map 
-	ensure(TopActionTag.IsValid() && LeftActionTag.IsValid() && RightActionTag.IsValid()&&BottomActionTag.IsValid());
-	ImageMap.Add(TopActionTag, Image_Top);
-	ImageMap.Add(LeftActionTag, Image_Left);
-	ImageMap.Add(RightActionTag, Image_Right);
-	ImageMap.Add(BottomActionTag, Image_Bottom);
+	ImageMap.Add(GTags::InputActionUp, Image_Top);
+	ImageMap.Add(GTags::InputActionLeft, Image_Left);
+	ImageMap.Add(GTags::InputActionRight, Image_Right);
+	ImageMap.Add(GTags::InputActionDown, Image_Bottom);
 }
 
 void UHeroHUDWidget::NativeDestruct()
@@ -125,18 +126,27 @@ void UHeroHUDWidget::UpdateInputs()
 	// Set input images based on AIC
 	if (UAbilityInputComponent* AIC = CacheAIC.Get())
 	{
-		UpdateInputImage(TopActionTag, AIC->GetTagByInput(TopActionTag));
-		UpdateInputImage(LeftActionTag, AIC->GetTagByInput(LeftActionTag));
-		UpdateInputImage(RightActionTag, AIC->GetTagByInput(RightActionTag));
-		UpdateInputImage(BottomActionTag, AIC->GetTagByInput(BottomActionTag));
+		UpdateInputImage(GTags::InputActionUp, AIC->GetTagByInput(GTags::InputActionUp));
+		UpdateInputImage(GTags::InputActionLeft, AIC->GetTagByInput(GTags::InputActionLeft));
+		UpdateInputImage(GTags::InputActionRight, AIC->GetTagByInput(GTags::InputActionRight));
+		UpdateInputImage(GTags::InputActionDown, AIC->GetTagByInput(GTags::InputActionDown));
 	}
 }
 
 void UHeroHUDWidget::UpdateInputImage(FGameplayTag inputTag, FGameplayTag abilityTag)
 {
-	const UUISettings* UISettings = UUISettings::Get();
-	if (const TSoftObjectPtr<UTexture2D>* iconPtr = UISettings->AbilityIcons.Find(abilityTag))
+	if (abilityTag.IsValid())
 	{
-		ImageMap[inputTag]->SetBrushFromSoftTexture(*iconPtr);
+		ImageMap[inputTag]->SetVisibility(ESlateVisibility::HitTestInvisible);
+		const UUISettings* UISettings = UUISettings::Get();
+		if (const TSoftObjectPtr<UTexture2D>* iconPtr = UISettings->AbilityIcons.Find(abilityTag))
+		{
+			ImageMap[inputTag]->SetBrushFromSoftTexture(*iconPtr);
+		}
 	}
+	else
+	{
+		ImageMap[inputTag]->SetVisibility(ESlateVisibility::Hidden);
+	}
+	
 }
