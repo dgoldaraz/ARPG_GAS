@@ -15,7 +15,9 @@ UDashAbility::UDashAbility()
 	FGameplayTag dashTag = GTags::DashAbility;
 	AbilityTags.AddTag(dashTag);
 	ActivationBlockedTags.AddTag(dashTag);
-	
+	// Allows that clients activate the ability immediately and the server approve it
+	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::LocalPredicted;
+	InstancingPolicy =EGameplayAbilityInstancingPolicy::InstancedPerActor;
 }
 
 void UDashAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
@@ -26,11 +28,12 @@ void UDashAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
 	if (CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
 		// Create animation Task and wait to end
-		// Todo: Define rate based on speed attribute?
-		// TODO: Use input to define animation?
 		m_AnimationTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, TEXT("DashAnimationTask"),MontageToPlay);
 		m_AnimationTask->ReadyForActivation();
-		// TODO: Use input to define movement.
+		// TODO: Properly define how moevement is going to be done
+		// For now just use prefixed values
+		// in the future we can use MorphWarping or a value based on Stamina/Other Values + Speed + Level
+		
 		FVector Direction = GetOwningActorFromActorInfo()->GetActorForwardVector();
 		FVector CurrentSpeed = GetOwningActorFromActorInfo()->GetVelocity();
 		
@@ -38,8 +41,10 @@ void UDashAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, cons
 			DashDuration, false,nullptr, ERootMotionFinishVelocityMode::SetVelocity, CurrentSpeed, 0.0f, false);
 		
 		m_RootMotionConstantForce->OnFinish.AddUniqueDynamic(this, &UDashAbility::OnMovementDone);
+		m_AnimationTask->OnCancelled.AddUniqueDynamic(this, &UDashAbility::OnMovementDone);
+		m_AnimationTask->OnInterrupted.AddUniqueDynamic(this, &UDashAbility::OnMovementDone);
+		
 		m_RootMotionConstantForce->ReadyForActivation();
-		// TODO: Base on Level, create a parry effect
 	}
 }
 

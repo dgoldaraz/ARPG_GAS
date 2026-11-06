@@ -15,6 +15,7 @@ class UAbilitySystemComponent;
 
 // Declare delegate when input change action
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnInputChanged, FGameplayTag inputTag, FGameplayTag actionTag );
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnInputBlocked, FGameplayTag inputTag, FGameplayTag actionTag, bool blocked );
 
 USTRUCT(BlueprintType)
 struct FAbilityInputBinding
@@ -57,6 +58,10 @@ public:
 	// Sets default values for this component's properties
 	UAbilityInputComponent();
 	
+	// From ActorComponent
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
 	// Setup input
 	void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent);
 	
@@ -74,10 +79,15 @@ protected:
 public:
 	// Delegate called when input changes
 	FOnInputChanged OnInputChangedDelegate;
+	// Delegate called when input is blocked/unblocked
+	FOnInputBlocked OnInputBlockedDelegate;
 	
 private:
 	// Implement the interface method to return an AbilitySystemComponent
 	UAbilitySystemComponent* GetAbilitySystemComponent() const;
+	
+	// Function called when tag changed
+	void OnGameplayTagChanged(const FGameplayTag Tag, int32 NewCount);
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
@@ -88,4 +98,7 @@ private:
 	// Cache tag <-> ability info
 	UPROPERTY(Transient)
 	TMap<FGameplayTag, FAbilityInfo> abilitySlot;
+	
+	// Handle for the listener when Tags changed
+	FDelegateHandle GameplayTagChangedHandle;
 };

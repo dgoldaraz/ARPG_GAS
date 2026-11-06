@@ -11,7 +11,6 @@
 #include "Components/AbilityInputComponent.h"
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
-#include "ARPGTags.h"
 
 void UHeroHUDWidget::InitializeWithPawn(APawn* InPawn)
 {
@@ -43,6 +42,7 @@ void UHeroHUDWidget::InitializeWithPawn(APawn* InPawn)
 		CacheAIC = AIC;
 		// Listen to changes on input
 		AIC->OnInputChangedDelegate.AddUObject(this, &ThisClass::OnInputChanged);
+		AIC->OnInputBlockedDelegate.AddUObject(this, &ThisClass::OnInputBlocked);
 		UpdateInputs();
 	}
 }
@@ -51,15 +51,16 @@ void UHeroHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	/// Fill map 
-	ImageMap.Add(GTags::InputActionUp, Image_Top);
-	ImageMap.Add(GTags::InputActionLeft, Image_Left);
-	ImageMap.Add(GTags::InputActionRight, Image_Right);
-	ImageMap.Add(GTags::InputActionDown, Image_Bottom);
+	ImageMap.Add(GTags::InputActionUp, FImageSet{Image_Top, Image_Top_Blocked});
+	ImageMap.Add(GTags::InputActionLeft, FImageSet{Image_Left,Image_Left_Blocked} );
+	ImageMap.Add(GTags::InputActionRight, FImageSet{Image_Right, Image_Right_Blocked} );
+	ImageMap.Add(GTags::InputActionDown, FImageSet{Image_Bottom, Image_Bottom_Blocked} );
 }
 
 void UHeroHUDWidget::NativeDestruct()
 {
 	CleanListeners();
+	ImageMap.Reset();
 	Super::NativeDestruct();
 }
 
@@ -81,6 +82,12 @@ void UHeroHUDWidget::OnInputChanged(FGameplayTag inputTag, FGameplayTag actionTa
 	UpdateInputImage(inputTag, actionTag);
 }
 
+void UHeroHUDWidget::OnInputBlocked(FGameplayTag inputTag, FGameplayTag actionTag, bool blocked)
+{
+	// based on input tag, show/hide block state
+	ImageMap[inputTag].Image_Blocked->SetVisibility(blocked ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Collapsed);
+}
+
 void UHeroHUDWidget::CleanListeners()
 {
 	// Remove previous Delegates
@@ -98,6 +105,7 @@ void UHeroHUDWidget::CleanListeners()
 		if (UAbilityInputComponent* oldAIC = CacheAIC.Get())
 		{
 			oldAIC->OnInputChangedDelegate.RemoveAll(this);
+			oldAIC->OnInputBlockedDelegate.RemoveAll(this);
 		}
 	}
 }
@@ -137,16 +145,15 @@ void UHeroHUDWidget::UpdateInputImage(FGameplayTag inputTag, FGameplayTag abilit
 {
 	if (abilityTag.IsValid())
 	{
-		ImageMap[inputTag]->SetVisibility(ESlateVisibility::HitTestInvisible);
+		ImageMap[inputTag].Image->SetVisibility(ESlateVisibility::HitTestInvisible);
 		const UUISettings* UISettings = UUISettings::Get();
 		if (const TSoftObjectPtr<UTexture2D>* iconPtr = UISettings->AbilityIcons.Find(abilityTag))
 		{
-			ImageMap[inputTag]->SetBrushFromSoftTexture(*iconPtr);
+			ImageMap[inputTag].Image->SetBrushFromSoftTexture(*iconPtr);
 		}
 	}
 	else
 	{
-		ImageMap[inputTag]->SetVisibility(ESlateVisibility::Hidden);
+		ImageMap[inputTag].Image->SetVisibility(ESlateVisibility::Hidden);
 	}
-	
 }

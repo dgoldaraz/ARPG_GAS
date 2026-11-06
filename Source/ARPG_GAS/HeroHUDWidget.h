@@ -13,6 +13,13 @@ class UAbilityInputComponent;
 class UProgressBar;
 class UImage;
 
+// Struct saving image and blocked image
+struct FImageSet
+{
+	TObjectPtr<UImage> Image;
+	TObjectPtr<UImage> Image_Blocked;
+};
+
 /**
  * Main Hero HUD Widget showed on Player Character
  */
@@ -34,8 +41,9 @@ protected:
 	void OnHealthChanged(const FOnAttributeChangeData& ChangeData);
 	void OnStaminaChanged(const FOnAttributeChangeData& ChangeData);
 	void OnInputChanged(FGameplayTag inputTag, FGameplayTag actionTag);
-private:
+	void OnInputBlocked(FGameplayTag inputTag, FGameplayTag actionTag, bool blocked);
 	
+private:
 	// Function to clean previously created listeners(if any)
 	void CleanListeners();
 	// Update HealthBar
@@ -46,6 +54,8 @@ private:
 	void UpdateInputs();
 	// Update Input image
 	void UpdateInputImage(FGameplayTag inputTag, FGameplayTag abilityTag);
+	// Update blocked status of image
+	void UpdateBlockedImage(FGameplayTag inputTag);
 	
 protected:
 	// Bars
@@ -63,6 +73,16 @@ protected:
 	TObjectPtr<UImage> Image_Right;
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UImage> Image_Bottom;
+	
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    TObjectPtr<UImage> Image_Top_Blocked;
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    TObjectPtr<UImage> Image_Left_Blocked;
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    TObjectPtr<UImage> Image_Right_Blocked;
+    UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+    TObjectPtr<UImage> Image_Bottom_Blocked;
+	
 private:
 	
 	// Cache components
@@ -70,6 +90,5 @@ private:
 	TWeakObjectPtr<UAbilityInputComponent> CacheAIC;
 	
 	// Map for accessing images by tag
-	UPROPERTY(Transient)
-	TMap<FGameplayTag, TObjectPtr<UImage>> ImageMap;
+	TMap<FGameplayTag, FImageSet> ImageMap;
 };

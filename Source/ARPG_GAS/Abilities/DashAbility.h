@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Abilities/GameplayAbility.h"
+#include "HeroBaseAbility.h"
 #include "DashAbility.generated.h"
 
 class UAbilityTask_PlayMontageAndWait;
@@ -16,7 +16,7 @@ class UAbilityTask_ApplyRootMotionConstantForce;
  * - Add perfect dodge 
  */
 UCLASS()
-class ARPG_GAS_API UDashAbility : public UGameplayAbility
+class ARPG_GAS_API UDashAbility : public UHeroBaseAbility
 {
 	GENERATED_BODY()
 	

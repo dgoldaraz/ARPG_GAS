@@ -5,6 +5,7 @@
 #include "ARPGTags.h"
 #include "EnhancedInputComponent.h"
 #include "HeroCharacter.h"
+#include "Abilities/HeroBaseAbility.h"
 
 
 // Sets default values for this component's properties
@@ -14,7 +15,24 @@ UAbilityInputComponent::UAbilityInputComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
+}
 
+void UAbilityInputComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		GameplayTagChangedHandle = ASC->RegisterGenericGameplayTagEvent().AddUObject(this,&ThisClass::OnGameplayTagChanged);
+	}
+}
+
+void UAbilityInputComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->RegisterGenericGameplayTagEvent().Remove(GameplayTagChangedHandle);
+	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void UAbilityInputComponent::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -117,5 +135,18 @@ UAbilitySystemComponent* UAbilityInputComponent::GetAbilitySystemComponent() con
 		return ownerCharacter->GetAbilitySystemComponent();
 	}
 	return nullptr;
+}
+
+void UAbilityInputComponent::OnGameplayTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	// Check abilities set and match cooldown
+	for (const auto& ability : abilitySlot)
+	{
+		UHeroBaseAbility* baseAbility = ability.Value.AbilityClass->GetDefaultObject<UHeroBaseAbility>();
+		if (baseAbility->GetCoolDownTag() == Tag)
+		{
+			OnInputBlockedDelegate.Broadcast(ability.Key, ability.Value.AbilityTag, NewCount > 0);
+		}
+	}
 }
 
